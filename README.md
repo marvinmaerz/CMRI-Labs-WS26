@@ -34,3 +34,17 @@ Optionally create dependency lockfile:
 ```bash
 hatch lock --export pylock.toml
 ```
+
+PyCharm: to run labs cell-by-cell, mark the selected LabXX directory 
+as sources root to include their path in the Python Console that opens:
+
+1. Right-click LabXX directory -> Mark Directory As -> Sources Root
+
+2. Open LabXX/labxx.py in PyCharm
+
+3. Go to the `if __name__ == "__main__"` block
+
+4. Click on green triangle that says "Execute cell in Console"
+
+5. Upon working on a new / different lab, unmark the other lab as sources root, and mark the new one. 
+This reduces the probability of two packages with the same name being confused on import.

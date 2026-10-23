@@ -47,7 +47,7 @@ class Lab01_op:
             A mask of CSF, shape: (128, 128), dtype: bool
         """
         # task 1.2
-        # Your code here ...
+        # TODO: Your code here ...
 
         return None
 
@@ -58,7 +58,7 @@ class Lab01_op:
             A mask of GM, shape: (128, 128), dtype: bool
         """
         # task 1.2
-        # Your code here ...
+        # TODO: Your code here ...
 
         return None
 
@@ -69,7 +69,7 @@ class Lab01_op:
             A mask of WM, shape: (128, 128), dtype: bool
         """
         # task 1.2
-        # Your code here ...
+        # TODO: Your code here ...
 
         return None
 
@@ -83,7 +83,7 @@ class Lab01_op:
             T1 value of the target region in [ms]
         """
         # task 1.3.3
-        # Your code here ...
+        # TODO: Your code here ...
 
         T1_ms = None
         return T1_ms
@@ -98,7 +98,7 @@ class Lab01_op:
             T2 value of the target region in [ms]
         """
         # task 1.3.3
-        # Your code here ...
+        # TODO: Your code here ...
 
         T2_ms = None
         return T2_ms
@@ -113,7 +113,7 @@ class Lab01_op:
             PD value of the target region
         """
         # task 1.3.3
-        # Your code here ...
+        # TODO: Your code here ...
 
         PD = None
         return PD
@@ -129,7 +129,7 @@ class Lab01_op:
             A 2D image of the spin echo sequence, shape: (128, 128), dtype: float
         """
         # task 2.1
-        # Your code here ...
+        # TODO: Your code here ...
 
         SE = None
         return SE
@@ -147,6 +147,7 @@ if __name__ == "__main__":
     op.load_data(path="digital_brain_phantom.mat")
 
     # %% 1.2 Display the regions: Cerebrospinal Fluid (CSF), Gray Matter (GM), and White Matter (WM)
+    # TODO
     csf_mask = None
     gm_mask = None
     wm_mask = None
@@ -155,14 +156,17 @@ if __name__ == "__main__":
 
     # %% 1.3 Explore T1, T2, PD values
     # 1.3.1 display T1_, T2_, and PD_map
+    # TODO
 
 
     # 1.3.2 print unique values of T1_, T2_, PD_map
+    # TODO
 
 
 
 
     # 1.3.3 print corresponding T1, T2, and PD values for CSF, GM, and WM
+    # TODO
     # T1 map for CSF, GM, and WM, respectively
     T1_map_csf = None
     T1_map_gm = None
@@ -179,10 +183,13 @@ if __name__ == "__main__":
     PD_map_wm = None
 
     # %% 2.1 Simulated spin-echo signall equation
+    # TODO
 
     # 2.2 define TR, TE values for proton density weighted "PDw_TRTE", 
     # T1-weighted "T1w_TRTE", and T2-weighted "T2w_TRTE" images in the constructor
+    # TODO
 
     # 2.3 plot PDw, T1w, and T2w images
+    # TODO
 
 
