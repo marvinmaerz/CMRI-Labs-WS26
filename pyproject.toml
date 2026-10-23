@@ -9,8 +9,8 @@ description = "CMRI (Computational Magnetic Resonance Imaging) exercises, WS 26/
 requires-python = "==3.10.*"
 
 # Environment translated from environment_Windows.yaml (conda env CMRI-25WS).
-# Usage:  hatch shell            -> activate the environment
-#         hatch run jupyter lab  -> start JupyterLab
+# Usage:  `hatch shell`            -> activate the environment
+#         `hatch run jupyter lab`  -> start JupyterLab
 [tool.hatch.envs.default]
 python = "3.10"
 installer = "uv"
