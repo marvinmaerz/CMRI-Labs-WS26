@@ -48,3 +48,14 @@ as sources root to include their path in the Python Console that opens:
 
 5. Upon working on a new / different lab, unmark the other lab as sources root, and mark the new one. 
 This reduces the probability of two packages with the same name being confused on import.
+
+# Labs
+## Lab 1
+<img width="500" height="450" alt="label mask" src="https://github.com/user-attachments/assets/c3137f81-4f3c-4353-9b20-ddc7b8317324" />
+
+<img width="1500" height="450" alt="tissue masks" src="https://github.com/user-attachments/assets/72c0def3-5488-4206-8154-c8ef4edcd426" />
+
+<img width="1500" height="450" alt="t1, t2, pd masks" src="https://github.com/user-attachments/assets/cc2acfeb-0bd8-4015-a1f9-6cb6094b0652" />
+
+<img width="1500" height="450" alt="contrast" src="https://github.com/user-attachments/assets/f9bfd494-f10b-496e-9473-32c8783dad89" />
+
