@@ -19,7 +19,7 @@ class Lab02_op:
         Load fully sampled kdata
         """
         # task 1.1
-        mat = utils.load_data("kdata1.mat")
+        mat = utils.load_data("Lab02/kdata1.mat")
         return mat["kdata1"]
 
     def load_kdata_os(self):
@@ -27,7 +27,7 @@ class Lab02_op:
         Load oversampled kdata
         """
         # task 1.1
-        mat = utils.load_data("kdata2.mat")
+        mat = utils.load_data("Lab02/kdata2.mat")
         return mat["kdata2"]
 
     def fft2c(self, x: np.ndarray, axes=(-2, -1)) -> np.ndarray:
@@ -46,8 +46,10 @@ class Lab02_op:
         """
         # task 1.2
         # Your code here ...
-
-        return None
+        x = fftshift(x, axes=axes)
+        x = fft2(x, axes=axes, norm="ortho")
+        x = ifftshift(x, axes=axes)
+        return x
 
     def ifft2c(self, x: np.ndarray, axes=(-2, -1)) -> np.ndarray:
         """
@@ -66,8 +68,10 @@ class Lab02_op:
         """
         # task 1.2
         # Your code here ...
-
-        return None
+        x = ifftshift(x, axes=axes)
+        x = ifft2(x, axes=axes, norm="ortho")
+        x = fftshift(x, axes=axes)
+        return x
 
     def get_square_filter(self, kdata: np.ndarray, mask_size: int) -> np.ndarray:
         """
@@ -82,8 +86,11 @@ class Lab02_op:
         """
         # task 2.1
         # Your code here ...
-
-        filter = None
+        N = kdata.shape[0]
+        filter = np.zeros_like(kdata, dtype=complex)
+        center = N // 2
+        m_half = mask_size // 2
+        filter[ center - m_half : center + m_half, center - m_half : center + m_half ] = 1
         return filter
 
     def filtering(self, kdata: np.ndarray, filter: np.ndarray) -> np.ndarray:
@@ -98,8 +105,7 @@ class Lab02_op:
         """
         # task 2.2
         # Your code here ...
-
-        filtered_kdata = None
+        filtered_kdata = kdata * filter  # conv in fourier space is simple multiplication
         return filtered_kdata
 
     def get_psf_1d_square(self, kdata: np.ndarray, mask_size: int, **kwargs) -> np.ndarray:
@@ -120,9 +126,14 @@ class Lab02_op:
 
         # task 3.1
         # Your code here ...
-
-        psf = None
-
+        N = kdata.shape[0]
+        filter_2d = get_square_filter(kdata, mask_size)
+        center_row = filter_2d.shape[0] // 2
+        filter_1d = filter_2d[center_row].reshape((N, 1))
+        # print(f"filter_1d shape: {filter_1d.shape}")
+        filter_1d_ifft = ifft2c(filter_1d)
+        psf = np.abs(filter_1d_ifft).squeeze()
+        # print(f"psf shape: {psf.shape}")
         return psf
 
     def get_fwhm(self, psf: np.ndarray) -> int:
@@ -136,9 +147,11 @@ class Lab02_op:
         """
         # task 3.4
         # Your code here ...
-
-        fwhm = None
-
+        peak_idx = psf.argmax()  # index of highest point of psf
+        half_max = psf.max() / 2  # half value of that highest peak
+        left_idx = np.argmin(np.abs(psf[ : peak_idx] - half_max))  # index of half_max in psf on the left side of the peak
+        right_idx = peak_idx + np.argmin(np.abs(psf[ peak_idx : ] - half_max))  # analogously on right side
+        fwhm = right_idx - left_idx  # width of the highest psf peak at half its maximum
         return fwhm
 
     def get_hamming_filter(self, kdata: np.ndarray, mask_size: int) -> np.ndarray:
@@ -155,8 +168,12 @@ class Lab02_op:
         """
         # task 4.1
         # Your code here ...
-
-        filter = None
+        N = kdata.shape[0]
+        center = N // 2
+        m_half = mask_size // 2
+        filter = np.zeros_like(kdata, dtype=complex)
+        hamming_window = window("hamming", (mask_size, mask_size))
+        filter[center - m_half: center + m_half, center - m_half: center + m_half] = hamming_window
         return filter
 
     def get_psf_1d_hamming(self, kdata: np.ndarray, mask_size: int, **kwargs) -> np.ndarray:
@@ -177,8 +194,10 @@ class Lab02_op:
 
         # task 4.3
         # Your code here ...
-
-        psf = None
+        N = kdata.shape[0]
+        filter_2d = get_hamming_filter(kdata, mask_size)
+        filter_1d = filter_2d[N//2].reshape((N,1))
+        psf = np.abs(ifft2c(filter_1d)).squeeze()
         return psf
 
     def cut_oversampled(self, kdata_os, os_factor, **kwargs) -> np.ndarray:
@@ -196,8 +215,12 @@ class Lab02_op:
 
         # task 5.1
         # Your code here ...
-
-        cropped_img = None
+        cropped_img = ifft2c(kdata_os)
+        M = cropped_img.shape[1]
+        M_ds = M // os_factor  # donwsampled M size
+        center_idx = cropped_img.shape[1] // 2
+        start = center_idx - M_ds // 2
+        cropped_img = cropped_img[:, start : start + M_ds ]
         return cropped_img
 
 
@@ -212,77 +235,124 @@ if __name__ == "__main__":
     kdata_os = op.load_kdata_os()
 
     # %% 1.2 Reconstruct fully sampled k-space
-    reconstructed_image = None
+    reconstructed_image = op.ifft2c(kdata)
+    reconstructed_image = op.fft2c(reconstructed_image)
+    reconstructed_image = op.ifft2c(reconstructed_image)  # should be same as the first one
     # plot magnitude and phase
+    utils.imshow([np.abs(reconstructed_image), np.angle(reconstructed_image)],
+                 titles=["Magnitude", "Phase"], is_mag=False)
 
     # %% 2.1 Define square filters for [64, 128, 256]
-    square_filter64 = None
-    square_filter128 = None
-    square_filter256 = None
+    square_filter64 = op.get_square_filter(kdata, 64)
+    square_filter128 = op.get_square_filter(kdata, 128)
+    square_filter256 = op.get_square_filter(kdata, 256)
+
+    utils.imshow([square_filter64, square_filter128, square_filter256],
+        titles=["square_filter64", "square_filter128", "square_filter256"])
 
     # %% 2.2 Apply the filter to fully sampled k-space
-    filtered_kdata_square64 = None
-    filtered_kdata_square128 = None
-    filtered_kdata_square256 = None
+    filtered_kdata_square64 = op.filtering(kdata, square_filter64)
+    filtered_kdata_square128 = op.filtering(kdata, square_filter128)
+    filtered_kdata_square256 = op.filtering(kdata, square_filter256)
 
     # %% 2.3 Reconstruct the filtered k-space
-    reconstructed_image_square64 = None
-    reconstructed_image_square128 = None
-    reconstructed_image_square256 = None
+    reconstructed_image_square64 = op.ifft2c(filtered_kdata_square64)
+    reconstructed_image_square128 = op.ifft2c(filtered_kdata_square128)
+    reconstructed_image_square256 = op.ifft2c(filtered_kdata_square256)
 
     # plot and compare with reconstructed image from task 1.2
-
+    utils.imshow([reconstructed_image, reconstructed_image_square64,
+        reconstructed_image_square128, reconstructed_image_square256],
+        titles=["Reconstructed", "Square 64x64", "Square 128x128", "Square 256x256"])
 
     # %% 3.1, 3.2 Generate 1D PSF for square filter [64, 128, 256]
-    psf_square64 = None
-    psf_square128 = None
-    psf_square256 = None
+    psf_square64 = op.get_psf_1d_square(kdata, mask_size=64)
+    psf_square128 = op.get_psf_1d_square(kdata, mask_size=128)
+    psf_square256 = op.get_psf_1d_square(kdata, mask_size=256)
 
     # %% 3.3 plot the PSFs
-
+    # utils.plot([psf_square64, psf_square128, psf_square256],
+    #     titles=["PSF64", "PSF128", "PSF256"], xlim=[256 - 30, 256 + 30])
 
     # %% 3.4 compute full width at half-maximum (FWHM) for each PSF
-    fwhm64 = None
-    fwhm128 = None
-    fwhm256 = None
+    fwhm64 = op.get_fwhm(psf_square64)
+    fwhm128 = op.get_fwhm(psf_square128)
+    fwhm256 = op.get_fwhm(psf_square256)
 
+    print(f"FWHM for Square 64: {fwhm64:.3f}")
+    print(f"FWHM for Square 128: {fwhm128:.3f}")
+    print(f"FWHM for Square 256: {fwhm256:.3f}")
     # %% 4.1 Define Hamming filters for [64, 128, 256]
-    hamming_filter64 = None
-    hamming_filter128 = None
-    hamming_filter256 = None
+    hamming_filter64 = op.get_hamming_filter(kdata, 64)
+    hamming_filter128 = op.get_hamming_filter(kdata, 128)
+    hamming_filter256 = op.get_hamming_filter(kdata, 256)
+
+    utils.imshow([hamming_filter64, hamming_filter128, hamming_filter256],
+                 titles=["hamming_filter64", "hamming_filter128", "hamming_filter256"])
 
     # %% 4.2 Reconstruct filtered k-space and compare them with reconstructions from 1.2, 2.3
     # Apply filter to k-space
-    filtered_kdata_hamming64 = None
-    filtered_kdata_hamming128 = None
-    filtered_kdata_hamming256 = None
+    filtered_kdata_hamming64 = op.filtering(kdata, hamming_filter64)
+    filtered_kdata_hamming128 = op.filtering(kdata, hamming_filter128)
+    filtered_kdata_hamming256 = op.filtering(kdata, hamming_filter256)
 
     # Reconstruct
-    reconstructed_image_hamming64 = None
-    reconstructed_image_hamming128 = None
-    reconstructed_image_hamming256 = None
+    reconstructed_image_hamming64 = op.ifft2c(filtered_kdata_hamming64)
+    reconstructed_image_hamming128 = op.ifft2c(filtered_kdata_hamming128)
+    reconstructed_image_hamming256 = op.ifft2c(filtered_kdata_hamming256)
 
     # display and compare
+    utils.imshow(
+        [
+            reconstructed_image,
+            reconstructed_image_hamming64,
+            reconstructed_image_hamming128,
+            reconstructed_image_hamming256,
+        ],
+        titles=["Reconstructed", "Hamming 64x64", "Hamming 128x128", "Hamming 256x256"]
+    )
 
+    utils.imshow(
+        [
+            reconstructed_image_square64,
+            reconstructed_image_square128,
+            reconstructed_image_square256,
+            reconstructed_image_hamming64,
+            reconstructed_image_hamming128,
+            reconstructed_image_hamming256,
+        ],
+        titles=[
+            "64x64 (Square)",
+            "128x128 (Square)",
+            "256x256 (Square)",
+            "64x64(Hamming)",
+            "128x128(Hamming)",
+            "256x256(Hamming)",
+        ],
+        num_rows=2,
+        suptitle="Comparison of square and hamming filters"
+    )
     
     # %% 4.3 Compute PSFs for different patterns, and compare those from 3.1, 3.2
-    psf_hamming64 = None
-    psf_hamming128 = None
-    psf_hamming256 = None
+    psf_hamming64 = op.get_psf_1d_hamming(kdata, 64)
+    psf_hamming128 = op.get_psf_1d_hamming(kdata, 128)
+    psf_hamming256 = op.get_psf_1d_hamming(kdata, 256)
 
     # %% 4.4 Compute full width at half-maximum for each PSF
-    fwhm64 = None
-    fwhm128 = None
-    fwhm256 = None
+    fwhm64 = op.get_fwhm(psf_hamming64)
+    fwhm128 = op.get_fwhm(psf_hamming128)
+    fwhm256 = op.get_fwhm(psf_hamming256)
 
     # display and compare the PSFs of hamming and square windows
-
+    print(f"FWHM for Hamming 64: {fwhm64:.3f}")
+    print(f"FWHM for Hamming 128: {fwhm128:.3f}")
+    print(f"FWHM for Hamming 256: {fwhm256:.3f}")
     # %% 5.1 Reconstruct and remove the oversampling
     # reconstruct oversampled k-space
-    reconstructed_image_os = None
+    reconstructed_image_os = op.ifft2c(kdata_os)
 
     # cropping
-    decimated_image = None
+    decimated_image = op.cut_oversampled(kdata_os, 2)
 
     # display reconstructions before and after cropping
-    
+    utils.imshow([reconstructed_image_os, decimated_image], titles=["reconstructed_image_os", "decimated_image"])
