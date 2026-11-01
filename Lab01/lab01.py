@@ -135,7 +135,7 @@ if __name__ == "__main__":
     op = Lab01_op()
 
     # %% 1.1.	Load the file digital_brain_phantom.mat by calling load_data method.
-    op.load_data(path="digital_brain_phantom.mat")
+    op.load_data(path="Lab01/digital_brain_phantom.mat")
 
     # %% 1.2 Display the regions: Cerebrospinal Fluid (CSF), Gray Matter (GM), and White Matter (WM)
     csf_mask = op.get_csf_mask()
