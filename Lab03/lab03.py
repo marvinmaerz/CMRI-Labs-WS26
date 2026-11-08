@@ -144,7 +144,7 @@ class Lab03_op:
         estim_phs = kwargs.get("estim_phs", self.estim_phs)
         get_window = kwargs.get("get_window", self.get_window)
 
-        # TODO task 3.2
+        # task 3.2
         # Your code here ...
         N, M = kdata.shape
         S_0 = np.zeros((N, N), dtype=complex)
@@ -178,8 +178,23 @@ class Lab03_op:
 
         # task 4.1
         # TODO Your code here ...
+        N, M = kdata.shape
 
-        I = None
+        # initialization step of slides
+        S = np.zeros((N, N), dtype=complex)
+        S[:, :M] = kdata  # S_0(k) in slides
+        I = utils.ifft2c(S)  # I_0(r) in slides
+        phase = estim_phs(kdata)
+
+        # iteration steps of slides
+        for _ in range(Nite):
+            # phase step
+            I = np.abs(I) * np.exp(1j * phase)
+
+            # data consistency step
+            S = utils.fft2c(I)
+            S[:, :M] = kdata
+            I = utils.ifft2c(S)
 
         return I
 
@@ -190,7 +205,7 @@ if __name__ == "__main__":
     from lab03 import *
 
     plots_dir = "plots"
-    save_plots = False
+    save_plots = True
 
     # %% 1.1 Define the lab03 object and load kdata.
     ## The partial Fourier factor is 9/16.
@@ -266,13 +281,14 @@ if __name__ == "__main__":
 
     # %% 5.1 Plots: fully sampled, zero-filled, two Margosian, POCS reconstructions
     # Fully sampled reconstruction
-    kdata_full = op.load_kdata_full()
-    full_recon = None
-
-    zf_recon = None
+    full_recon = utils.ifft2c(kdata_full)
 
     # 5.2 plot difference images between above reconstructions and the fully sampled reconstruction
-
+    utils.imshow(
+        [full_recon, half_zf_recon, margosian_ramp, margosian_hamm, pocs_imgs[-1]],
+        titles=["Ground truth", "Zero-filled reconstruction", "Margosian ramp reconstruction", "Margosian hamming reconstruction", "POCS reconstruction with 10 iterations"],
+        filename=f"{plots_dir}/task_5_all_reconstructions.png" if save_plots else None
+    )
 
 
 
