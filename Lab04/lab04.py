@@ -45,8 +45,14 @@ class Lab04_op:
         """
         # task 1.2
         # Your code here ...
+        Readout, Spokes = k_radial.shape
 
-        traj = None
+        traj = np.zeros((Readout, Spokes), dtype=complex)
+        spoke = np.linspace(-0.5, 0.5, Readout)  # 1d array with len(Readout)-many values spaced evenly from -0.5 to 0.5
+        angle = lambda i: (self.PI / 2) + (i * self.GA)  # gives angle offset for spoke i. Is 90° for spoke 0 (vertical line)
+
+        for i in range(Spokes):
+            traj[:, i] = spoke * np.exp(1j * angle(i))  # rotates spoke i by the angle for that spoke
 
         return traj
 
@@ -61,7 +67,7 @@ class Lab04_op:
             spokes_nyq:      minimum number of spokes that satisfy Nyquist sampling theorem. (Ceilling up integer)
         """
         # task 1.3
-        # Your code here ...
+        # TODO Your code here ...
 
         spokes_nyq = None
 
@@ -78,7 +84,7 @@ class Lab04_op:
             k_cart:         kdata in cartesian coordinate. shape: [Readout, Readout]), dtype=complex
         """
         # task 2.1
-        # Your code here ...
+        # TODO Your code here ...
 
         k_cart = None
 
@@ -95,7 +101,7 @@ class Lab04_op:
             ramp:           ramp filter. shape: [Readout, 1], dtype=float
         """
         # task 3.1
-        # Your code here ...
+        # TODO Your code here ...
 
         ramp = None
 
@@ -117,7 +123,7 @@ class Lab04_op:
         get_ramp = kwargs.get("get_ramp", self.get_ramp)
 
         # task 3.2
-        # Your code here ...
+        # TODO Your code here ...
 
         k_cart_ds = None
 
@@ -140,7 +146,7 @@ class Lab04_op:
         get_ramp = kwargs.get("get_ramp", self.get_ramp)
 
         # task 4.1
-        # Your code here ...
+        # TODO Your code here ...
 
         k_cart_ds_os = None
 
@@ -158,7 +164,7 @@ class Lab04_op:
             image_crop (np.ndarray):        cropped image. shape: target_shape, dtype=complex
         """
         # task 4.2
-        # Your code here ...
+        # TODO Your code here ...
 
         image_crop = None
 
@@ -179,7 +185,7 @@ class Lab04_op:
             c:                          deapodization factor c(x,y). shape: [Oversampled_Readout, Oversampled_Readout], dtype=complex
         """
         # task 5.1
-        # Your code here ...
+        # TODO Your code here ...
         c = None
 
         return c
@@ -205,7 +211,7 @@ class Lab04_op:
         a = 1
 
         # task 5.2
-        # Your code here ...
+        # TODO Your code here ...
 
         deapod_recon = None
 
@@ -223,7 +229,7 @@ class Lab04_op:
                             Do not forget to set the self.device for the tensor.
         """
         # task 6.1
-        # Your code here ...
+        # TODO Your code here ...
 
         ktraj = None
 
@@ -246,7 +252,7 @@ class Lab04_op:
         get_ramp = kwargs.get("get_ramp", self.get_ramp)
 
         # task 6.2
-        # Your code here ...
+        # TODO Your code here ...
 
         nufft_kdata = None
 
@@ -269,7 +275,7 @@ class Lab04_op:
         nufft_kdata = kwargs.get("nufft_kdata", self.nufft_kdata)
 
         # task 6.3
-        # Your code here ...
+        # TODO Your code here ...
 
         nufft_recon = None
 
@@ -281,16 +287,19 @@ if __name__ == "__main__":
     # This import is necessary to run the code cell-by-cell
     from lab04 import *
 
+    save_plots = False
     # %% 1.1 Load data
     op = Lab04_op()
     k_radial = op.load_kdata()
-    utils.imshow([k_radial], norm=0.3)
+    utils.imshow([k_radial], norm=0.3, titles=["k_radial"],
+        filename="task_1-1_k_radial.png" if save_plots else None
+    )
 
     # %% 1.2 Radial sampling pattern
-    traj = None
+    traj = op.get_traj(k_radial)
 
     # plot trajectory
-    
+    utils.plot_spokes(traj, 10)
 
     # %% 1.3 Calculate Nyquist rate of radial sampling
     spokes_nyq = None
