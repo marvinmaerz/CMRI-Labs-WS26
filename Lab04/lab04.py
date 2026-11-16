@@ -109,16 +109,14 @@ class Lab04_op:
         """
         # task 3.1
         # TODO Your code here ...
-        Readout = k_radial.shape[0]
+        Readout, Spokes = k_radial.shape
         center = Readout // 2
+        min_value = 1 / Spokes
 
         ramp = np.zeros((Readout, 1), dtype=float)
-        indices = np.arange(Readout)
-        # ramp[:center, 0] = np.linspace(1.0, 0.0, center)
-        # ramp[center:, 0] = np.linspace(0.0, 1.0, center)
-        ramp[:, 0] = np.abs(np.linspace(-1.0, 1.0, Readout))
-        # ramp[: , 0] = np.abs(indices - center) / center
-        # print(ramp)
+        ramp[:center, 0] = np.linspace(1.0, min_value, center)
+        ramp[center:, 0] = np.linspace(min_value, 1.0, Readout - center)
+        # print(f"Ramp values (dtype: {ramp.dtype}, shape: {ramp.shape}):\n{ramp}")
         return ramp
 
     def grid_radial_ds(self, k_radial, traj, **kwargs) -> np.ndarray:
