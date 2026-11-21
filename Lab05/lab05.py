@@ -39,7 +39,7 @@ class Lab05_op:
         # task 1.2.1
         # Your code here ...
 
-        mc = None
+        mc = np.sqrt(np.sum(np.abs(m) ** 2, axis=axis))
         return mc
 
     def ls_comb(
@@ -65,12 +65,19 @@ class Lab05_op:
 
         # task 1.2.2
         # Your code here ...
+        # nPE, nRO, nCh = coil_imgs.shape
+        # coil_comb_img = np.zeros((nPE, nRO), dtype=complex)
 
         if PSI is not None:
             # After 1.b.ii.2 and 1.b.ii.3, you should apply the noise correlation matrix to the coil sensitivity maps and coil images.
-            pass
+            coil_imgs = apply_psi(coil_imgs, PSI)
+            sens_maps = apply_psi(sens_maps, PSI)
 
-        coil_comb_img = None
+        numerator = np.sum(np.conj(sens_maps) * coil_imgs, axis=axis)
+        denominator = np.sum(np.abs(sens_maps) ** 2, axis=axis)
+        out = np.zeros_like(numerator)
+        coil_comb_img = np.divide(numerator, denominator, out=out, where=(denominator != 0.0))  # "where" avoids division by zero and "out" sets this area to zero instead of nan
+
         return coil_comb_img
 
     def get_psi(self, noise_maps: np.ndarray) -> np.ndarray:
@@ -86,8 +93,9 @@ class Lab05_op:
         """
         # task 1.2.2
         # Your code here ...
-
-        psi = None
+        # nCh = noise_maps.shape[1]
+        psi = np.cov(noise_maps, rowvar=False).astype(complex)
+        # print(f"PSI shape: {psi.shape} (should be [{nCh}, {nCh}])")
         return psi
 
     def apply_psi(self, x: np.ndarray, psi: np.ndarray) -> np.ndarray:
@@ -111,8 +119,9 @@ class Lab05_op:
 
         # task 1.2.2
         # Your code here ...
+        psi_pow = fractional_matrix_power(psi, -0.5)
 
-        y = None
+        y = x @ psi_pow.T
 
         return y
 
@@ -129,8 +138,11 @@ class Lab05_op:
         """
         # task 2.2
         # Your code here ...
-
-        locs = None
+        aliased_FOV_size = int(np.ceil(PE / R))
+        replica_idx = np.arange(R)
+        offsets = replica_idx * aliased_FOV_size
+        unwrapped_pos = idx_PE + offsets
+        locs = unwrapped_pos % PE
 
         return locs
 
@@ -147,8 +159,11 @@ class Lab05_op:
         """
         # task 2.3
         # Your code here ...
-
-        i_n = None
+        aliased_FOV_size = int(np.ceil(PE/R))
+        block_start = PE // 2 - aliased_FOV_size // 2
+        in_block = (locs >= block_start) & (locs < block_start + aliased_FOV_size)
+        loc_in_block = locs[in_block][0]
+        i_n = int(loc_in_block - block_start)
 
         return i_n
 
@@ -165,8 +180,9 @@ class Lab05_op:
         """
         # task 2.4
         # Your code here ...
+        sens_at_locs = sens_maps[locs, idx_RO, :].T
 
-        C_pinv = None
+        C_pinv = pinv(sens_at_locs)
 
         return C_pinv
 
@@ -185,8 +201,9 @@ class Lab05_op:
         """
         # task 2.5
         # Your code here ...
+        aliased_coil_vals = aliased_imgs[idx_PE_alias, idx_RO, :]
 
-        unwrapped_coeff = None
+        unwrapped_coeff = sm_pinv @ aliased_coil_vals
 
         return unwrapped_coeff
 
@@ -202,8 +219,9 @@ class Lab05_op:
         """
         # task 2.6
         # Your code here ...
+        sens_at_locs = sens_maps[locs, idx_RO, :].T
 
-        g = None
+        g = utils.calc_g(sens_at_locs)
 
         return g
 
@@ -244,10 +262,14 @@ class Lab05_op:
             if not unaliased_img[idx_PE, idx_RO]:
                 # SENSE reconstruction
                 # Your code here ...
+                locs = sense_locs(idx_PE, PE, R)
+                aliased_row = sense_aliased_idx(PE, R, locs)
+                sm_pinv = sense_sm_pinv(sens_maps, locs, idx_RO)
+                unaliased_img[locs, idx_RO] = sense_unwrap(aliased_imgs, sm_pinv, aliased_row, idx_RO)
 
                 # g-factor
                 # Your code here ...
-                pass
+                g_map[locs, idx_RO] = sense_g_coef(sens_maps, locs, idx_RO)
 
         return unaliased_img, g_map
 
@@ -257,38 +279,69 @@ if __name__ == "__main__":
     # This import is necessary to run the code cell-by-cell
     from lab05 import *
 
+    save_plots = True
     # %% 1.1 Load data
     op = Lab05_op()
     kdata, sens_maps, noise_maps = op.load_data()
 
     # %% 1.2 Coil combination
+    coil_imgs = utils.ifft2c(kdata, axes=(0, 1))
+    complex_recon = utils.cmplx_sum(coil_imgs)
+
     # 1.2.1 Sum-of-square combination
-    sos = None
+    sos_recon = op.sos_comb(coil_imgs)
 
     # 1.2.2 least-squares combination without pre-whitening
-    ls = None
+    ls = op.ls_comb(coil_imgs, sens_maps)  # no noise
 
     # 1.2.2 least-squares combination with pre-whitening
-    PSI = None
-    ls_wPSI = None
+    PSI = op.get_psi(noise_maps)
+    ls_wPSI = op.ls_comb(coil_imgs, sens_maps, PSI)  # with noise
 
     # 1.3 plot: complex sum, sos, ls with and without pre-whitening
-
+    utils.imshow(
+        [complex_recon, sos_recon, ls, ls_wPSI],
+        titles=["Complex Sum", "Sum of Square", "Least Squares (no PSI pre-whitening)", "Least Squares (PSI pre-whitening)"],
+        filename="task_1_comparison.png" if save_plots else None,
+    )
 
     # %% 2 SENSE reconstruction
     # simulate acceleration factors
     R = [2, 3, 4]
+    senses, gs, title_R, title_g = [], [], [], []
 
-    # get aliased images
-    aliased_img = None
+    for r in R:
+        # get aliased images
+        aliased_img = utils.ifft2c(kdata[::r], axes=(0, 1)) * np.sqrt(r)
 
-    # SENSE reconstruction
-    unaliased, g_maps = None
+        # SENSE reconstruction
+        unaliased, g_maps = op.sense_recon(aliased_img, sens_maps, PSI, r)
+        senses.append(unaliased)
+        gs.append(g_maps)
 
-    # g-factor
-    g_factor = None
+        # g-factor
+        g_factor = np.mean(g_maps[np.nonzero(g_maps)])
+
+        title_R.append(f"R={r}")
+        title_g.append(f"g-factor={g_factor:.2f}")
 
     # display reconstructed image, reconstruction error w.r.t least-squares combination, g-factor map for each R
+    utils.imshow(
+        senses,
+        gt=ls_wPSI,
+        titles=title_R,
+        filename="task_2_sense.png" if save_plots else None,
+    )
+
+    ls_wPSI_norm = utils.normalization(ls_wPSI)
+    for i, r in enumerate(R):
+        sense_norm = utils.normalization(senses[i])
+        utils.imshow(
+            [sense_norm, ls_wPSI_norm - sense_norm, gs[i]],
+            titles=["SENSE", "Difference to LS", title_g[i]],
+            suptitle=title_R[i],
+            filename=f"task_2_R{r}.png" if save_plots else None,
+        )
 
 
 
